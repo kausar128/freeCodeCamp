@@ -1,0 +1,90 @@
+const CURRENCY_MAP = {
+    "PENNY": 0.01,
+    "NICKEL": 0.05,
+    "DIME": 0.10,
+    "QUARTER": 0.25,
+    "ONE": 1.00,
+    "FIVE": 5.00,
+    "TEN": 10.00,
+    "TWENTY": 20.00,
+    "ONE HUNDRED": 100.00
+};
+const CASHREGISTER_STATUS = {
+    insufficient_funds: "INSUFFICIENT_FUNDS",
+    closed: "CLOSED",
+    open: "OPEN"
+};
+
+function checkCashRegister(price, cash, cid) {
+    let cashRegister = {
+        status: '',
+        change: cid
+    };
+    const changeRequired = parseFloat(cash - price).toFixed(2);
+    let changeAvailableInCashRegister = getTotalChangeFromCashRegister(cid);
+
+    cashRegister.status = getCashRegisterStatus(changeRequired, changeAvailableInCashRegister);
+
+    if (cashRegister.status === CASHREGISTER_STATUS.insufficient_funds) {
+        cashRegister.change = [];
+        return cashRegister;
+    }
+    cashRegister.change = getRequiredChange(changeRequired, cid);
+    if (changeRequired < getTotalChangeFromCashRegister(cashRegister.change)) {
+        cashRegister.status = CASHREGISTER_STATUS.insufficient_funds;
+        cashRegister.change = [];
+    }
+
+    if (cashRegister.status === CASHREGISTER_STATUS.closed) {
+        cashRegister.change = [...cid];
+    }
+
+    function getRequiredChange(changeRequired, cid) {
+        const change = [];
+        for (let i = cid.length - 1; i >= 0; i--) {
+            const currencyName = cid[i][0];
+            const currencyTotal = cid[i][1];
+            const currencyValue = CURRENCY_MAP[currencyName];
+            let currencyAmount = (currencyTotal / currencyValue).toFixed();
+            let changeToReturn = 0;
+            while (changeRequired >= currencyValue && currencyAmount > 0) {
+                changeRequired = (changeRequired - currencyValue).toFixed(2);
+                currencyAmount--;
+                changeToReturn++;
+            }
+
+            if (changeToReturn > 0) {
+                change.push([currencyName, changeToReturn * currencyValue]);
+            }
+            if (changeRequired == 0.00) {
+                return change;
+            } else if (i === 0) {
+                cashRegister.status = CASHREGISTER_STATUS.insufficient_funds;
+                return [];
+            } else {}
+        }
+        return change;
+    }
+
+    function getTotalChangeFromCashRegister(cid) {
+        let totalChange = 0;
+        for (let cash of cid) {
+            totalChange += cash[1];
+        }
+        return totalChange.toFixed(2);
+    }
+
+    function getCashRegisterStatus(changeRequired, changeAvailableInCashRegister) {
+        if (Number(changeRequired) > Number(changeAvailableInCashRegister)) {
+            return CASHREGISTER_STATUS.insufficient_funds;
+        } else if (Number(changeRequired) < Number(changeAvailableInCashRegister)) {
+            return CASHREGISTER_STATUS.open;
+        } else {
+            return CASHREGISTER_STATUS.closed;
+        }
+    }
+
+    return cashRegister;
+}
+
+checkCashRegister(19.5, 20, [["PENNY", 0.01], ["NICKEL", 0], ["DIME", 0], ["QUARTER", 0], ["ONE", 1], ["FIVE", 0], ["TEN", 0], ["TWENTY", 0], ["ONE HUNDRED", 0]]);
